@@ -196,7 +196,11 @@ def gerar_tempo_envio():
 
 
 def gerar_tempo_digitacao():
+<<<<<<< HEAD
     return random.uniform(0.028, 0.09)
+=======
+    return random.uniform(0.025, 0.075)
+>>>>>>> 4eba4f7 (fita)
 
 
 def garantir_sessao(driver):
@@ -361,7 +365,11 @@ def digitar_mensagem(driver, mensagem):
     print("Mensagem enviada.")
 
 
+<<<<<<< HEAD
 def high(mensagem, clientes, mandarFoto=False, mandarBoasVindas=False):
+=======
+def high(mensagem, clientes, mandarFoto=False, mandarBoasVindas=False, driver=None):
+>>>>>>> 4eba4f7 (fita)
     """Envia mensagens aos clientes informados em uma lista de [nome, telefone].
 
     Para mandarFoto=True, a imagem precisa já estar copiada para a área de transferência
@@ -370,11 +378,20 @@ def high(mensagem, clientes, mandarFoto=False, mandarBoasVindas=False):
     lista_clientes_contatados = []
     lista_clientes_fora_wpp = []
     lista_clientes_com_erro = []
+<<<<<<< HEAD
     driver = None
 
     try:
         driver = criar_driver()
         garantir_sessao(driver)
+=======
+    driver_externo = driver is not None
+
+    try:
+        if driver is None:
+            driver = criar_driver()
+            garantir_sessao(driver)
+>>>>>>> 4eba4f7 (fita)
 
         for cliente in clientes:
             if not isinstance(cliente, (list, tuple)) or len(cliente) < 2:
@@ -463,7 +480,11 @@ def high(mensagem, clientes, mandarFoto=False, mandarBoasVindas=False):
         print(f"\nClientes não confirmados como contatados ({len(faltantes)}):")
         print(faltantes)
 
+<<<<<<< HEAD
         if driver is not None:
+=======
+        if driver is not None and not driver_externo:
+>>>>>>> 4eba4f7 (fita)
             try:
                 input("Aperte ENTER para fechar o navegador...")
             except (EOFError, KeyboardInterrupt):
@@ -476,11 +497,16 @@ def high(mensagem, clientes, mandarFoto=False, mandarBoasVindas=False):
 
 
 def abrir_whats():
+<<<<<<< HEAD
     driver = None
+=======
+    """Abre o WhatsApp Web em uma janela visível e devolve o driver ativo."""
+>>>>>>> 4eba4f7 (fita)
     try:
         driver = criar_driver()
         garantir_sessao(driver)
         driver.get("https://web.whatsapp.com/")
+<<<<<<< HEAD
         input("WhatsApp Web aberto. Aperte ENTER para fechar o navegador...")
     except (Exception, KeyboardInterrupt) as erro:
         print(f"Erro ao abrir o WhatsApp Web: {erro}")
@@ -497,6 +523,24 @@ def adicionar_contatos(lista, lista_contatos_adicionados, lista_contatos_faltant
     try:
         driver = criar_driver()
         garantir_sessao(driver)
+=======
+        return driver
+    except Exception as erro:
+        print(f"Erro ao abrir o WhatsApp Web: {erro}")
+        try:
+            driver.quit()
+        except Exception:
+            pass
+        return None
+
+
+def adicionar_contatos(lista, lista_contatos_adicionados, lista_contatos_faltantes, driver=None):
+    driver_externo = driver is not None
+    try:
+        if driver is None:
+            driver = criar_driver()
+            garantir_sessao(driver)
+>>>>>>> 4eba4f7 (fita)
 
         for cliente in lista:
             if not isinstance(cliente, (list, tuple)) or len(cliente) < 2:
@@ -572,7 +616,11 @@ def adicionar_contatos(lista, lista_contatos_adicionados, lista_contatos_faltant
     except Exception as erro:
         print(f"Falha ao iniciar o cadastro de contatos: {erro}")
     finally:
+<<<<<<< HEAD
         if driver is not None:
+=======
+        if driver is not None and not driver_externo:
+>>>>>>> 4eba4f7 (fita)
             try:
                 input("Aperte ENTER para fechar o navegador...")
             except (EOFError, KeyboardInterrupt):

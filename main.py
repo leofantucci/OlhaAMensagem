@@ -190,6 +190,7 @@ def menu():
         printar_cabecalho()
 
         print("0 - Enviar por E-mail")
+<<<<<<< HEAD
         print("1 - Abrir Whatsapp")
         print("2 - Adicionar Contatos")
         print("3 - Enviar por WhatsApp")
@@ -212,6 +213,23 @@ def menu():
             case 3:
                 enviar_whats()
             case 9:
+=======
+        print("1 - WhatsApp")
+        print("9 - Sair\n")
+
+        try:
+            escolha_menu = input("Escolha a opção desejada: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nOperação interrompida.")
+            break
+
+        match escolha_menu:
+            case "0":
+                enviar_email()
+            case "1":
+                menu_whatsapp()
+            case "9":
+>>>>>>> 4eba4f7 (fita)
                 limpar_tela()
                 print("Até a próxima!")
                 break
@@ -220,6 +238,54 @@ def menu():
                 pausar()
 
 
+<<<<<<< HEAD
+=======
+def menu_whatsapp():
+    # Abre o WhatsApp Web graficamente antes de apresentar as ações.
+    # O navegador permanece aberto para o usuário navegar manualmente e também
+    # é reutilizado pelas automações, evitando abrir uma segunda janela/perfil.
+    driver = abrir_whats()
+    if driver is None:
+        print("Não foi possível abrir o WhatsApp Web.")
+        pausar()
+        return
+
+    try:
+        while True:
+            limpar_tela()
+            printar_cabecalho()
+            print("WHATSAPP WEB ABERTO\n")
+            print("O navegador está aberto. Você pode navegar normalmente nele.")
+            print("1 - Adicionar contatos")
+            print("2 - Enviar mensagens")
+            print("3 - Continuar navegando no WhatsApp")
+            print("0 - Fechar WhatsApp e voltar ao menu principal\n")
+
+            escolha = input("O que deseja fazer? [3]: ").strip()
+            if escolha == "":
+                escolha = "3"
+
+            if escolha == "1":
+                add_contato(driver)
+            elif escolha == "2":
+                enviar_whats(driver)
+            elif escolha == "3":
+                input("Navegue no WhatsApp Web. Pressione ENTER aqui para voltar às opções...")
+            elif escolha == "0":
+                break
+            else:
+                print("Opção inválida.")
+                pausar()
+    except (EOFError, KeyboardInterrupt):
+        print("\nVoltando ao menu principal...")
+    finally:
+        try:
+            driver.quit()
+        except Exception:
+            pass
+
+
+>>>>>>> 4eba4f7 (fita)
 def enviar_email():
     limpar_tela()
     printar_cabecalho()
@@ -330,7 +396,21 @@ def enviar_email():
     pausar("\nProcesso finalizado. Pressione ENTER para continuar...")
 
 
+<<<<<<< HEAD
 def enviar_whats():
+=======
+def perguntar_sim_nao(pergunta, padrao):
+    """Pergunta S/N; ENTER aceita o padrão informado."""
+    padrao = padrao.upper()
+    indicacao = "S/n" if padrao == "S" else "s/N"
+    resposta = input(f"{pergunta} ({indicacao}): ").strip().lower()
+    if not resposta:
+        resposta = padrao.lower()
+    return resposta in ("s", "sim", "y", "yes")
+
+
+def enviar_whats(driver=None):
+>>>>>>> 4eba4f7 (fita)
     mandarFoto = False
     mandarBoasVindas = False
     limpar_tela()
@@ -352,6 +432,7 @@ def enviar_whats():
     if caminho_csv is None:
         return
 
+<<<<<<< HEAD
     escolhaFoto = input("3° passo: Deseja enviar uma foto? (S/N) - ")
     if escolhaFoto.strip().upper().startswith("S"):
         mandarFoto = True
@@ -370,6 +451,23 @@ def enviar_whats():
         print(f"\nNão é possível preparar o Firefox: {erro}")
         pausar()
         return
+=======
+    mandarFoto = perguntar_sim_nao(
+        "3° passo: Deseja enviar uma foto?", "N"
+    )
+    mandarBoasVindas = perguntar_sim_nao(
+        "4° passo: Deseja enviar boas-vindas? (Ex.: Olá NOME, tudo bem?)", "S"
+    )
+
+    perfil_firefox = "sessão do WhatsApp Web já aberta" if driver is not None else None
+    if driver is None:
+        try:
+            perfil_firefox = preparar_perfil_automacao()
+        except Exception as erro:
+            print(f"\nNão é possível preparar o Firefox: {erro}")
+            pausar()
+            return
+>>>>>>> 4eba4f7 (fita)
 
     lista_clientes = []
     telefones_vistos = set()
@@ -423,11 +521,19 @@ def enviar_whats():
         nome = cliente[0] if cliente[0] else "sem nome"
         print(f"- {nome}: {cliente[1]}")
 
+<<<<<<< HEAD
     confirmacao = input(
         "\nDeseja iniciar o envio pelo WhatsApp? (s/n): "
     ).strip().lower()
 
     if confirmacao != "s":
+=======
+    confirmar_envio = perguntar_sim_nao(
+        "\nDeseja iniciar o envio pelo WhatsApp?", "S"
+    )
+
+    if not confirmar_envio:
+>>>>>>> 4eba4f7 (fita)
         print("Operação cancelada.")
         pausar()
         return
@@ -437,14 +543,22 @@ def enviar_whats():
     print(f"Enviando para {len(lista_clientes)} cliente(s)...\n")
 
     try:
+<<<<<<< HEAD
         high(texto, lista_clientes, mandarFoto, mandarBoasVindas)
+=======
+        high(texto, lista_clientes, mandarFoto, mandarBoasVindas, driver=driver)
+>>>>>>> 4eba4f7 (fita)
     except Exception as erro:
         print(f"Erro durante a automação do WhatsApp: {erro}")
 
     pausar("\nProcesso finalizado. Pressione ENTER para continuar...")
 
 
+<<<<<<< HEAD
 def add_contato():
+=======
+def add_contato(driver=None):
+>>>>>>> 4eba4f7 (fita)
     limpar_tela()
     printar_cabecalho()
     print("ADICIONAR CONTATOS\n")
@@ -457,6 +571,7 @@ def add_contato():
     if caminho_csv is None:
         return
 
+<<<<<<< HEAD
     try:
         perfil_firefox = preparar_perfil_automacao()
     except Exception as erro:
@@ -467,6 +582,19 @@ def add_contato():
     lista_contatos_adicionados = []
     lista_contatos_faltantes = []
     adicionar_contatos(clientes, lista_contatos_adicionados, lista_contatos_faltantes)
+=======
+    if driver is None:
+        try:
+            preparar_perfil_automacao()
+        except Exception as erro:
+            print(f"\nNão é possível preparar o Firefox: {erro}")
+            pausar()
+            return
+
+    lista_contatos_adicionados = []
+    lista_contatos_faltantes = []
+    adicionar_contatos(clientes, lista_contatos_adicionados, lista_contatos_faltantes, driver=driver)
+>>>>>>> 4eba4f7 (fita)
 
     print("=========RESUMO=========")
     print("CONTATOS ADICIONADOS:", len(lista_contatos_adicionados))

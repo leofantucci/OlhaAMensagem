@@ -1,0 +1,22 @@
+OLHA-A-MENSAGEM - VERSÃO AJUSTADA
+
+ALTERAÇÕES
+- Menu WhatsApp com submenu: adicionar contatos ou enviar mensagens.
+- ENTER nas perguntas do WhatsApp usa os padrões solicitados:
+  * Enviar foto: NÃO
+  * Enviar boas-vindas: SIM
+  * Deseja iniciar o envio: SIM
+- Corrigida a lógica que ativava boas-vindas mesmo quando a resposta era NÃO.
+- Redução pequena do intervalo usado na digitação.
+- iniciar.sh agora usa a pasta onde está o próprio script.
+- Adicionado requirements.txt.
+
+CONFIGURAÇÃO
+1. Crie o ambiente: python -m venv .venv
+2. Instale: .venv/bin/pip install -r requirements.txt
+3. Para usar envio por e-mail, copie .env.example para .env e coloque sua RESEND_API_KEY.
+4. Execute ./iniciar.sh
+
+Observação: este ZIP não inclui .venv, .git, cache Python nem o arquivo .env, para evitar
+enviar dependências locais, metadados do Git e credenciais privadas.
+Os intervalos de execução não garantem ausência de restrições no WhatsApp.

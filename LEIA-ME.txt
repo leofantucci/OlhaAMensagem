@@ -1,0 +1,43 @@
+OLHA-A-MENSAGEM — INTERFACE JARVIS + VR
+
+REQUISITOS
+- Manjaro/Linux com Python 3 e Firefox instalado.
+- Conexão com a internet para instalar dependências e usar WhatsApp Web.
+
+EXECUÇÃO
+1. Extraia a pasta do ZIP.
+2. Abra um terminal dentro da pasta.
+3. Execute:
+   chmod +x iniciar.sh
+   ./iniciar.sh
+
+WHATSAPP PELA INTERFACE
+- Entre em WhatsApp e clique em ABRIR WHATSAPP WEB.
+- Faça login no Firefox se o WhatsApp solicitar.
+- Selecione o arquivo TXT com a mensagem e o CSV de contatos.
+- O CSV deve conter nome na primeira coluna e telefone na segunda.
+- Opcionalmente selecione uma imagem e marque a opção de envio de imagem.
+- Revise a mensagem e confirme a quantidade de contatos antes de iniciar.
+- Acompanhe andamento e erros na área de operações dentro do aplicativo.
+- ADICIONAR CONTATOS DO CSV também é iniciado pela interface.
+- FECHAR SESSÃO encerra o navegador automatizado. Fechar o aplicativo também tenta encerrar a sessão.
+
+O envio do WhatsApp não exige mais digitar opções ou pressionar ENTER no terminal.
+O Firefox continua sendo uma janela separada, pois o WhatsApp Web é aberto nele; o controle do fluxo, seleção de arquivos, confirmação e logs ficam dentro do aplicativo.
+
+E-MAIL
+O módulo de e-mail ainda usa o backend CLI. Configure RESEND_API_KEY no arquivo .env para usá-lo.
+
+OBSERVAÇÃO
+O WhatsApp Web pode alterar sua interface e seletores. Teste com poucos contatos antes de usar listas maiores e confira o resultado no próprio WhatsApp.
+
+
+INTEGRAÇÃO J.A.R.V.I.S.
+Na Visão geral, clique em “INICIAR JARVIS E ABRIR NO FIREFOX”. O app executa ~/Área de trabalho/Projetos/Jarvis/iniciar.sh e abre http://localhost:5173 no Firefox. A saída é gravada em jarvis.log dentro desta pasta. O projeto Jarvis precisa estar nesse caminho e ter Node/npm e suas configurações de backend.
+
+
+CORREÇÕES DE COMPATIBILIDADE (2026-11)
+- Telefones brasileiros com DDD e 10/11 dígitos recebem o código do país 55 automaticamente.
+- Números que já começam com 55 e têm 12/13 dígitos são mantidos.
+- Cliques na caixa de mensagem e em controles usam uma rotina de fallback quando um elemento está coberto.
+- Revise os números no CSV antes de enviar; a normalização não garante que a linha esteja ativa no WhatsApp.

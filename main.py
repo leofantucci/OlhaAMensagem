@@ -1,4 +1,3 @@
-
 import base64
 import csv
 import os
@@ -56,6 +55,7 @@ def obter_root():
 def limpar_tela():
     os.system("cls" if os.name == "nt" else "clear")
 
+
 def mensagem_wpp(texto, largura=50, borda="-", alinhamento="center"):
     largura = max(largura, len(texto) + 2)
 
@@ -72,6 +72,7 @@ def mensagem_wpp(texto, largura=50, borda="-", alinhamento="center"):
     print("|" + conteudo + "|")
     print(linha)
 
+
 def printar_cabecalho():
     print("########################")
     print("OLHA-A-MENSAGEM.app - v0")
@@ -79,7 +80,11 @@ def printar_cabecalho():
 
 
 def pausar(mensagem="Pressione ENTER para continuar..."):
-    input(mensagem)
+    try:
+        input(mensagem)
+    except EOFError:
+        # Evita travar em ambientes sem STDIN interativo
+        pass
 
 
 def filtrar_numero(numero):
@@ -353,16 +358,13 @@ def enviar_whats():
         return
 
     escolhaFoto = input("3° passo: Deseja enviar uma foto? (S/N) - ")
-    if escolhaFoto.strip().upper().startswith("S"):
-        mandarFoto = True
-    else:
-        mandarFoto = False
+    mandarFoto = escolhaFoto.strip().upper().startswith("S")
 
-    escolhaBoasVindas = input("4° passo: Deseja enviar boas vindas? - (Ex.: Olá NOME, tudo bem?) - (S/N) - ")
-    if escolhaBoasVindas.strip().upper().startswith("S"):
-        mandarBoasVindas = True
-    else:
-        mandarBoasVindas = True
+    escolhaBoasVindas = input(
+        "4° passo: Deseja enviar boas vindas? - (Ex.: Olá NOME, tudo bem?) - (S/N) - "
+    )
+    # CORRIGIDO: antes o else setava True (bug)
+    mandarBoasVindas = escolhaBoasVindas.strip().upper().startswith("S")
 
     try:
         perfil_firefox = preparar_perfil_automacao()
@@ -374,9 +376,6 @@ def enviar_whats():
     lista_clientes = []
     telefones_vistos = set()
     invalidos = 0
-
-    lista_clientes_contatados = []
-    lista_clientes_faltantes = []
 
     for cliente in clientes:
         if len(cliente) < 2:
@@ -402,10 +401,10 @@ def enviar_whats():
     limpar_tela()
     printar_cabecalho()
     print("=====CONFIRMANDO O ENVIO...=====\n")
-    if(mandarFoto):
+    if mandarFoto:
         mensagem_wpp("[FOTO]")
         print("\n")
-    if(mandarBoasVindas):
+    if mandarBoasVindas:
         mensagem_wpp("Olá, NOME! Tudo bem?")
         print("\n")
 
@@ -437,7 +436,14 @@ def enviar_whats():
     print(f"Enviando para {len(lista_clientes)} cliente(s)...\n")
 
     try:
-        high(texto, lista_clientes, mandarFoto, mandarBoasVindas)
+        resultado = high(texto, lista_clientes, mandarFoto, mandarBoasVindas)
+        if resultado:
+            contatados = resultado.get("contatados", [])
+            fora_wpp = resultado.get("fora_wpp", [])
+            print("\n================ RESUMO ================")
+            print(f"Contatados com sucesso: {len(contatados)}")
+            print(f"Fora do WhatsApp / não confirmados: {len(fora_wpp)}")
+            print("========================================")
     except Exception as erro:
         print(f"Erro durante a automação do WhatsApp: {erro}")
 

@@ -1,4 +1,3 @@
-
 import configparser
 import os
 import random
@@ -13,68 +12,13 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.action_chains import ActionChains
 
 LIMITE_LEGENDA = 1000
 
 SELETOR_CAIXA_MENSAGEM = [
     (By.XPATH, "//footer//div[@contenteditable='true']"),
     (By.XPATH, "//div[@role='textbox' and @contenteditable='true']"),
-]
-
-SELETOR_BOTAO_ANEXO = [
-    (By.CSS_SELECTOR, 'button[title="Anexar"]'),
-    (By.CSS_SELECTOR, 'button[aria-label="Anexar"]'),
-    (By.CSS_SELECTOR, 'button[title="Attach"]'),
-    (By.CSS_SELECTOR, 'button[aria-label="Attach"]'),
-    (By.CSS_SELECTOR, 'button[title="Adjuntar"]'),
-    (By.CSS_SELECTOR, 'button[aria-label="Adjuntar"]'),
-    (By.CSS_SELECTOR, 'button[data-testid="attach-btn"]'),
-    (By.CSS_SELECTOR, 'span[data-icon="plus"]'),
-    (By.CSS_SELECTOR, 'span[data-icon="clip"]'),
-]
-
-SELETOR_INPUT_IMAGEM = [
-    (By.CSS_SELECTOR, 'input[type="file"][accept*="image"]'),
-    (By.CSS_SELECTOR, 'input[type="file"]'),
-]
-
-SELETOR_OPCAO_FOTOS = [
-    (By.XPATH, "//*[normalize-space()='Fotos e vídeos']"),
-    (By.XPATH, "//*[normalize-space()='Photos & videos']"),
-    (By.XPATH, "//*[normalize-space()='Fotos y videos']"),
-]
-
-SELETOR_LEGENDA = [
-    (
-        By.XPATH,
-        "//div[@contenteditable='true'][@aria-placeholder='Adicione uma legenda']",
-    ),
-    (
-        By.XPATH,
-        "//div[@contenteditable='true'][@aria-placeholder='Add a caption']",
-    ),
-    (
-        By.XPATH,
-        "//div[@contenteditable='true'][@aria-label='Adicione uma legenda']",
-    ),
-    (
-        By.XPATH,
-        "//div[@contenteditable='true'][@aria-label='Add a caption']",
-    ),
-    (
-        By.XPATH,
-        "//div[@contenteditable='true' and not(ancestor::footer)]",
-    ),
-]
-
-SELETOR_BOTAO_ENVIAR = [
-    (By.CSS_SELECTOR, 'button[aria-label="Enviar"]'),
-    (By.CSS_SELECTOR, 'button[aria-label="Send"]'),
-    (By.CSS_SELECTOR, 'button[aria-label="Enviar mensagem"]'),
-    (By.CSS_SELECTOR, 'div[role="button"][aria-label="Enviar"]'),
-    (By.CSS_SELECTOR, 'div[role="button"][aria-label="Send"]'),
-    (By.CSS_SELECTOR, 'button[data-testid="send"]'),
-    (By.CSS_SELECTOR, 'span[data-icon="send"]'),
 ]
 
 SELETOR_NUMERO_SEM_WHATSAPP = [
@@ -98,6 +42,10 @@ SELETOR_BOTAO_OK = [
     (By.XPATH, "//div[@role='dialog']//*[@role='button']"),
 ]
 
+
+# ---------------------------------------------------------------------------
+# Perfil do Firefox
+# ---------------------------------------------------------------------------
 
 def bases_firefox():
     home = Path.home()
@@ -307,6 +255,10 @@ def criar_driver():
     return driver
 
 
+# ---------------------------------------------------------------------------
+# Utilidades
+# ---------------------------------------------------------------------------
+
 def gerar_tempo():
     return random.uniform(1.0, 2.5)
 
@@ -318,6 +270,27 @@ def gerar_tempo_envio():
 def gerar_tempo_digitacao():
     return random.uniform(0.028, 0.09)
 
+
+def normalizar_texto(texto):
+    texto = (texto or "").replace("\u00a0", " ")
+    return "\n".join(" ".join(linha.split()) for linha in texto.splitlines())
+
+
+def texto_da_caixa(elemento):
+    valores = [
+        elemento.get_attribute("innerText"),
+        elemento.get_attribute("textContent"),
+        elemento.text,
+    ]
+    for valor in valores:
+        if valor and valor.strip():
+            return valor
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Sessão
+# ---------------------------------------------------------------------------
 
 def garantir_sessao(driver):
     driver.get("https://web.whatsapp.com")
@@ -338,26 +311,28 @@ def garantir_sessao(driver):
             EC.presence_of_element_located((By.CSS_SELECTOR, "#pane-side"))
         )
     except TimeoutException as erro:
-        raise RuntimeError(
-            "Login no WhatsApp Web não concluído."
-        ) from erro
+        raise RuntimeError("Login no WhatsApp Web não concluído.") from erro
 
 
-def esperar(driver, seletores, timeout=20, visivel=True):
+# ---------------------------------------------------------------------------
+# Elementos
+# ---------------------------------------------------------------------------
+
+def encontrar_elemento(driver, seletores, timeout=15, visivel=True):
     condicoes = []
-
     for by, seletor in seletores:
         if visivel:
             condicoes.append(EC.visibility_of_element_located((by, seletor)))
         else:
             condicoes.append(EC.presence_of_element_located((by, seletor)))
-
     return WebDriverWait(driver, timeout).until(EC.any_of(*condicoes))
 
 
 def clicar(driver, elemento):
     try:
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", elemento)
+        driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", elemento
+        )
         time.sleep(0.3)
         elemento.click()
     except WebDriverException:
@@ -372,7 +347,6 @@ def clicar(driver, elemento):
 
 
 def obter_caixa_mensagem(driver):
-    """Retorna a caixa de mensagem visível no rodapé da conversa."""
     seletores = [
         (By.XPATH, "//footer//div[@contenteditable='true' and @role='textbox']"),
         (By.XPATH, "//footer//*[@contenteditable='true']"),
@@ -385,7 +359,10 @@ def obter_caixa_mensagem(driver):
             elementos = WebDriverWait(driver, 20).until(
                 EC.presence_of_all_elements_located((by, seletor))
             )
-            visiveis = [elemento for elemento in elementos if elemento.is_displayed() and elemento.is_enabled()]
+            visiveis = [
+                elemento for elemento in elementos
+                if elemento.is_displayed() and elemento.is_enabled()
+            ]
             if visiveis:
                 return visiveis[-1]
         except TimeoutException as erro:
@@ -397,27 +374,22 @@ def obter_caixa_mensagem(driver):
 
 
 def caixa_conversa_visivel(driver):
-    """Retorna a caixa de mensagem se ela já estiver visível, sem esperar."""
     for by, seletor in SELETOR_CAIXA_MENSAGEM:
         for elemento in driver.find_elements(by, seletor):
             if elemento.is_displayed() and elemento.is_enabled():
                 return elemento
-
     return None
 
 
 def numero_sem_whatsapp(driver):
-    """Retorna o aviso de número inválido/sem WhatsApp, se estiver visível."""
     for by, seletor in SELETOR_NUMERO_SEM_WHATSAPP:
         for elemento in driver.find_elements(by, seletor):
             if elemento.is_displayed():
                 return elemento
-
     return None
 
 
 def fechar_aviso_numero_invalido(driver):
-    """Fecha o diálogo de número inválido/sem WhatsApp."""
     try:
         elemento = encontrar_elemento(driver, SELETOR_BOTAO_OK, timeout=5)
         clicar(driver, elemento)
@@ -426,11 +398,6 @@ def fechar_aviso_numero_invalido(driver):
 
 
 def abrir_conversa(driver, telefone, timeout=25):
-    """
-    Abre a conversa do telefone e informa se ele está no WhatsApp.
-    Retorna True se a conversa abriu, False se o número não está no
-    WhatsApp e None se não foi possível confirmar.
-    """
     driver.get("https://web.whatsapp.com/send?phone=" + telefone)
 
     try:
@@ -448,29 +415,107 @@ def abrir_conversa(driver, telefone, timeout=25):
     return True
 
 
-def normalizar_texto(texto):
-    """Normaliza espaços e quebras de linha para comparar o texto digitado."""
-    texto = (texto or "").replace("\u00a0", " ")
-    return " ".join(texto.split())
+def limpar_caixa_mensagem(driver):
+    caixa = obter_caixa_mensagem(driver)
+    caixa.click()
+    caixa.send_keys(Keys.CONTROL, "a")
+    caixa.send_keys(Keys.BACKSPACE)
+    time.sleep(gerar_tempo())
 
 
-def texto_da_caixa(elemento):
+# ---------------------------------------------------------------------------
+# Botão de enviar
+# ---------------------------------------------------------------------------
+
+def clicar_botao_enviar(driver):
     """
-    Lê o conteúdo do editor usando mais de uma propriedade.
-    O WhatsApp pode expor o texto de formas diferentes no contenteditable.
+    Clica no botão de enviar da conversa aberta.
+    Espera o botão ficar clicável (ele só habilita depois que o texto
+    é 'commitado' no editor).
     """
-    valores = [
-        elemento.get_attribute("innerText"),
-        elemento.get_attribute("textContent"),
-        elemento.text,
+    seletores = [
+        (By.CSS_SELECTOR, 'button[data-tab="11"]'),
+        (By.CSS_SELECTOR, 'button[aria-label="Enviar"]'),
+        (By.CSS_SELECTOR, 'button[aria-label="Enviar mensagem"]'),
+        (By.CSS_SELECTOR, 'button[aria-label="Send"]'),
+        (
+            By.XPATH,
+            "//button[.//svg/title[contains(text(), 'send-filled') or contains(text(), 'send')]]",
+        ),
     ]
 
-    for valor in valores:
-        if valor and valor.strip():
-            return valor
+    for by, seletor in seletores:
+        try:
+            botao = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((by, seletor))
+            )
+        except TimeoutException:
+            continue
 
-    return ""
+        try:
+            if botao.is_displayed() and botao.is_enabled():
+                try:
+                    botao.click()
+                    print("Botão de enviar clicado (Selenium).")
+                    return True
+                except Exception:
+                    driver.execute_script("arguments[0].click();", botao)
+                    print("Botão de enviar clicado (JS).")
+                    return True
+        except Exception:
+            continue
 
+    # fallback JS puro
+    try:
+        clicou = driver.execute_script(
+            """
+            const btn = document.querySelector('button[data-tab="11"]')
+                     || document.querySelector('button[aria-label="Enviar"]')
+                     || document.querySelector('button[aria-label="Send"]')
+                     || document.querySelector('button[aria-label="Enviar mensagem"]');
+            if (btn) { btn.click(); return true; }
+            return false;
+            """
+        )
+        if clicou:
+            print("Botão de enviar clicado (JS fallback).")
+            return True
+    except Exception as e:
+        print(f"Falha no clique JS: {e}")
+
+    print("Não encontrei botão de enviar clicável.")
+    return False
+
+
+def esperar_botao_enviar_preview(driver, timeout=30):
+    """
+    Espera o botão de enviar da pré-visualização de imagem/mídia.
+    Aceita tanto 'Enviar N item(ns) selecionado(s)' quanto 'Enviar'.
+    """
+    seletores = [
+        (By.CSS_SELECTOR, 'button[aria-label^="Enviar"]'),
+        (By.CSS_SELECTOR, 'button[aria-label^="Send"]'),
+        (By.CSS_SELECTOR, 'div[role="button"][aria-label^="Enviar"]'),
+        (By.CSS_SELECTOR, 'div[role="button"][aria-label^="Send"]'),
+        (By.XPATH, "//button[.//svg/title[contains(text(), 'send-filled')]]"),
+    ]
+
+    def _botao_visivel(d):
+        for by, seletor in seletores:
+            for el in d.find_elements(by, seletor):
+                try:
+                    if el.is_displayed() and el.is_enabled():
+                        return el
+                except Exception:
+                    continue
+        return False
+
+    return WebDriverWait(driver, timeout, poll_frequency=0.5).until(_botao_visivel)
+
+
+# ---------------------------------------------------------------------------
+# Envio de mensagem
+# ---------------------------------------------------------------------------
 
 def digitar_mensagem(driver, mensagem):
     limpar_caixa_mensagem(driver)
@@ -488,59 +533,21 @@ def digitar_mensagem(driver, mensagem):
             caixa.send_keys(Keys.SHIFT, Keys.ENTER)
         else:
             caixa.send_keys(letra)
-
         time.sleep(gerar_tempo_digitacao())
 
-    esperado = normalizar_texto(mensagem)
 
-    try:
-        WebDriverWait(driver, 10).until(
-            lambda d: normalizar_texto(
-                texto_da_caixa(obter_caixa_mensagem(d))
-            ) == esperado
-        )
-    except TimeoutException as erro:
-        raise RuntimeError(
-            "O texto digitado está incompleto. "
-            "A mensagem não foi enviada."
-        ) from erro
-
-    caixa = obter_caixa_mensagem(driver)
-    caixa.send_keys(Keys.ENTER)
-
-    time.sleep(gerar_tempo_envio())
-
-    print("Mensagem enviada.")
-
-
-def encontrar_elemento(driver, seletores, timeout=15, visivel=True):
-    condicoes = []
-    for by, seletor in seletores:
-        if visivel:
-            condicoes.append(EC.visibility_of_element_located((by, seletor)))
-        else:
-            condicoes.append(EC.presence_of_element_located((by, seletor)))
-    return WebDriverWait(driver, timeout).until(EC.any_of(*condicoes))
-
-
-def limpar_caixa_mensagem(driver):
-    caixa = obter_caixa_mensagem(driver)
-    caixa.click()
-    caixa.send_keys(Keys.CONTROL, "a")
-    caixa.send_keys(Keys.BACKSPACE)
-    time.sleep(gerar_tempo())
-
+# ---------------------------------------------------------------------------
+# Fluxo principal de envio em massa
+# ---------------------------------------------------------------------------
 
 def high(mensagem, clientes, mandarFoto, mandarBoasVindas):
-    teste = "abc"
-    print("Comprimento abc = " + str(len(teste)))
-    driver = criar_driver()
+    driver = None
+    lista_clientes_contatados = []
+    lista_clientes_fora_wpp = []
 
     try:
+        driver = criar_driver()
         garantir_sessao(driver)
-
-        lista_clientes_contatados = []
-        lista_clientes_fora_wpp = []
 
         for cliente in clientes:
             if len(cliente) < 2:
@@ -548,6 +555,7 @@ def high(mensagem, clientes, mandarFoto, mandarBoasVindas):
 
             nome = str(cliente[0]).strip()
             telefone = "".join(ch for ch in str(cliente[1]) if ch.isdigit())
+
             if not telefone:
                 print("Linha ignorada: telefone vazio ou inválido.")
                 continue
@@ -560,8 +568,7 @@ def high(mensagem, clientes, mandarFoto, mandarBoasVindas):
 
                 if status is False:
                     print(
-                        f"O número {telefone} não está no WhatsApp. "
-                        "Pulando..."
+                        f"O número {telefone} não está no WhatsApp. Pulando..."
                     )
                     lista_clientes_fora_wpp.append(cliente)
                     time.sleep(gerar_tempo())
@@ -575,41 +582,67 @@ def high(mensagem, clientes, mandarFoto, mandarBoasVindas):
                     lista_clientes_fora_wpp.append(cliente)
                     time.sleep(gerar_tempo())
                     continue
-                
+
                 time.sleep(gerar_tempo())
 
                 try:
                     caixa = obter_caixa_mensagem(driver)
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", caixa)
+                    driver.execute_script(
+                        "arguments[0].scrollIntoView({block: 'center'});", caixa
+                    )
                     time.sleep(gerar_tempo())
                     try:
                         caixa.click()
-
                     except Exception:
                         driver.execute_script("arguments[0].click();", caixa)
                     time.sleep(gerar_tempo())
                 except Exception:
                     pass
 
+                limpar_caixa_mensagem(driver)
+
                 if mandarFoto:
                     time.sleep(gerar_tempo())
-                    caixa.send_keys(Keys.CONTROL, V)
-                    time.sleep(0.5)
-                    caixa.send_keys(Keys.ENTER)
+                    try:
+                        caixa = obter_caixa_mensagem(driver)
+                        caixa.send_keys(Keys.CONTROL, "v")
+                    except Exception as erro:
+                        print(f"Falha ao colar imagem: {erro}")
+
+                    try:
+                        botao_enviar_preview = esperar_botao_enviar_preview(
+                            driver, timeout=30
+                        )
+                        clicar(driver, botao_enviar_preview)
+                        print("Imagem enviada.")
+                    except TimeoutException:
+                        print(
+                            "Não encontrei o botão de enviar a imagem. Pulando foto."
+                        )
+                    time.sleep(gerar_tempo())
 
                 if nome and mandarBoasVindas:
                     primeira_msg = f"Olá, {nome}! Tudo bem?"
                     digitar_mensagem(driver, primeira_msg)
                     time.sleep(gerar_tempo())
+                    caixa.send_keys(Keys.ENTER)
+                    print("Saudações enviadas.")
+                    
 
                 digitar_mensagem(driver, mensagem)
+                time.sleep(gerar_tempo())
+                caixa.send_keys(Keys.ENTER)
+                print("Mensagem enviada.")
+
 
                 print(f"Mensagens enviadas para {telefone}.")
                 lista_clientes_contatados.append(cliente)
 
             except Exception as erro:
                 print(f"Erro ao processar {telefone}: {erro}")
-                print("Confira a conversa no WhatsApp Web antes de executar novamente.")
+                print(
+                    "Confira a conversa no WhatsApp Web antes de executar novamente."
+                )
 
             time.sleep(gerar_tempo())
 
@@ -628,8 +661,21 @@ def high(mensagem, clientes, mandarFoto, mandarBoasVindas):
         print("\nCLIENTES A CONTATAR (clientes - contatados): ")
         print(faltantes)
 
-        input("Aperte ENTER p/ fechar...")
-        driver.quit()
+        if driver is not None:
+            try:
+                driver.quit()
+            except Exception:
+                pass
+
+        try:
+            input("Aperte ENTER p/ fechar...")
+        except EOFError:
+            pass
+
+    return {
+        "contatados": lista_clientes_contatados,
+        "fora_wpp": lista_clientes_fora_wpp,
+    }
 
 
 def abrir_whats():
@@ -637,7 +683,7 @@ def abrir_whats():
 
     try:
         garantir_sessao(driver)
-        print(f"\nAbrindo Whatsapp")
+        print("\nAbrindo Whatsapp")
         try:
             driver.get("https://web.whatsapp.com/")
             input("Aperte ENTER para fechar!")
@@ -647,13 +693,21 @@ def abrir_whats():
         time.sleep(gerar_tempo())
 
     finally:
-        driver.quit()
+        try:
+            driver.quit()
+        except Exception:
+            pass
 
+
+# ---------------------------------------------------------------------------
+# Adicionar contatos
+# ---------------------------------------------------------------------------
 
 def adicionar_contatos(lista, lista_contatos_adicionados, lista_contatos_faltantes):
-    driver = criar_driver()
+    driver = None
 
     try:
+        driver = criar_driver()
         garantir_sessao(driver)
 
         for cliente in lista:
@@ -678,7 +732,7 @@ def adicionar_contatos(lista, lista_contatos_adicionados, lista_contatos_faltant
                         (By.CSS_SELECTOR, 'button[aria-label="Nova conversa"]'),
                         (By.CSS_SELECTOR, 'button[aria-label="New chat"]'),
                         (By.XPATH, "//*[contains(@data-icon, 'new-chat')]"),
-                    ]
+                    ],
                 )
 
                 clicar(driver, novo_chat)
@@ -689,7 +743,7 @@ def adicionar_contatos(lista, lista_contatos_adicionados, lista_contatos_faltant
                     [
                         (By.XPATH, "//*[normalize-space()='Novo contato']"),
                         (By.XPATH, "//*[normalize-space()='New contact']"),
-                    ]
+                    ],
                 )
 
                 clicar(driver, novo_contato)
@@ -701,7 +755,7 @@ def adicionar_contatos(lista, lista_contatos_adicionados, lista_contatos_faltant
                         (By.CSS_SELECTOR, 'div[data-testid="contact-first-name-input"]'),
                         (By.XPATH, "//div[@contenteditable='true' and @aria-label='Nome']"),
                         (By.XPATH, "//div[@contenteditable='true' and @aria-label='First name']"),
-                    ]
+                    ],
                 )
 
                 telefone_contato = encontrar_elemento(
@@ -710,7 +764,7 @@ def adicionar_contatos(lista, lista_contatos_adicionados, lista_contatos_faltant
                         (By.CSS_SELECTOR, 'input[data-testid="phone-number-input"]'),
                         (By.CSS_SELECTOR, 'input[aria-label="Número de telefone"]'),
                         (By.CSS_SELECTOR, 'input[aria-label="Phone number"]'),
-                    ]
+                    ],
                 )
 
                 nome_contato.click()
@@ -744,8 +798,11 @@ def adicionar_contatos(lista, lista_contatos_adicionados, lista_contatos_faltant
                         (By.CSS_SELECTOR, 'div[data-testid="save-contact-btn"]'),
                         (By.CSS_SELECTOR, '[aria-label="Salvar contato"]'),
                         (By.CSS_SELECTOR, '[data-testid="save-contact-btn"]'),
-                        (By.XPATH, "//*[@role='button' and (@aria-label='Salvar contato' or @aria-label='Save contact')]"),
-                    ]
+                        (
+                            By.XPATH,
+                            "//*[@role='button' and (@aria-label='Salvar contato' or @aria-label='Save contact')]",
+                        ),
+                    ],
                 )
 
                 clicar(driver, salvar)
@@ -761,8 +818,16 @@ def adicionar_contatos(lista, lista_contatos_adicionados, lista_contatos_faltant
             time.sleep(gerar_tempo())
 
     finally:
-        input("Aperte ENTER p/ fechar...")
-        driver.quit()
+        if driver is not None:
+            try:
+                driver.quit()
+            except Exception:
+                pass
+
+        try:
+            input("Aperte ENTER p/ fechar...")
+        except EOFError:
+            pass
 
     print("\n========== RESUMO ==========")
     print(f"Contatos adicionados: {len(lista_contatos_adicionados)}")

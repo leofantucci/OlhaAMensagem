@@ -1,0 +1,15 @@
+# === Dependências diretas do projeto ===
+resend>=2.0.0,<3.0.0
+python-dotenv>=1.0.0,<2.0.0
+selenium>=4.6.0,<5.0.0
+
+# === Recomendado para servidor headless (Selenium sem GUI) ===
+# Descomente se for rodar em servidor sem display:
+# pyvirtualdisplay>=3.0,<4.0
+
+# === Opcional: se quiser migrar o menu CLI para API web ===
+# fastapi>=0.110,<1.0
+# uvicorn[standard]>=0.29,<1.0
+# python-multipart>=0.0.9,<1.0
+# celery>=5.3,<6.0
+# redis>=5.0,<6.0
